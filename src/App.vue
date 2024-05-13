@@ -12,9 +12,10 @@
       <div class="list-container">
         <h2 v-if="currentView === 'todos'">Jadwal</h2>
         <div v-if="currentView === 'todos'" class="list">
-          <div v-for="(schedule, index) in schedules" :key="index" class="list-item">
+          <div v-for="(schedule, index) in schedules" :key="index" class="list-item" :class="{ 'completed': schedule.completed }">
             <div class="list-item-content">
-              <p>{{ schedule }}</p>
+              <input type="checkbox" v-model="schedule.completed" class="schedule-checkbox" @change="completeSchedule(schedule)">
+              <p>{{ schedule.title }}</p>
               <button @click="removeSchedule(index)" class="delete-btn">Hapus</button>
             </div>
           </div>
@@ -23,7 +24,16 @@
             <button @click="addSchedule" class="add-btn">Tambah</button>
           </div>
         </div>
-        <h2 v-else>Daftar Pengguna</h2>
+        <h2 v-if="currentView === 'completed'">Jadwal Selesai</h2>
+        <div v-if="currentView === 'completed'" class="list">
+          <div v-for="(schedule, index) in completedSchedules" :key="index" class="list-item completed">
+            <div class="list-item-content">
+              <p>{{ schedule.title }}</p>
+              <button @click="removeCompletedSchedule(index)" class="delete-btn">Hapus</button>
+            </div>
+          </div>
+        </div>
+        <h2 v-if="currentView !== 'todos'">Daftar Pengguna</h2>
         <input v-if="currentView !== 'todos'" type="text" v-model="searchQuery" placeholder="Cari pengguna..." class="search-input">
         <div v-if="currentView !== 'todos'" class="list">
           <div v-if="filteredUsers.length === 0" class="list-item">
@@ -121,7 +131,7 @@ export default {
     },
     addSchedule() {
       if (this.newSchedule.trim() !== '') {
-        this.schedules.push(this.newSchedule);
+        this.schedules.push({ title: this.newSchedule, completed: false });
         this.newSchedule = '';
         this.saveSchedules();
       }
@@ -130,8 +140,19 @@ export default {
       this.schedules.splice(index, 1);
       this.saveSchedules();
     },
-    saveSchedules() {
+    completeSchedule(schedule) {
+      schedule.completed = true;
+      this.saveSchedules();
+    },
+    removeCompletedSchedule(index) {
+      this.completedSchedules.splice(index, 1);
+      this.saveCompletedSchedules();
+    },
+    saveSchedules() { 
       localStorage.setItem('schedules', JSON.stringify(this.schedules));
+    },
+    saveCompletedSchedules() {
+      localStorage.setItem('completedSchedules', JSON.stringify(this.completedSchedules));
     }
   },
   computed: {
@@ -153,6 +174,9 @@ export default {
     },
     selectedUserPosts() {
       return this.filteredPosts.filter(post => post.userId === this.selectedUserId);
+    },
+    completedSchedules() {
+      return this.schedules.filter(schedule => schedule.completed);
     }
   }
 };
@@ -235,6 +259,10 @@ nav ul li.active a {
 
 .list-item-content p {
   margin: 5px 0;
+}
+
+.list-item.completed .list-item-content p {
+  text-decoration: line-through;
 }
 
 .delete-btn {
